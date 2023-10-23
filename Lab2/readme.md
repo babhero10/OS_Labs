@@ -17,8 +17,12 @@ There is **3 main files**
 **readme.md**: For Documentation.
 
 ## Prerequisites
-You had to have make installed to run the script
+You must have those available in your system
+- make
+- cron (Optional)
 
+
+### make 
 First update by typing.
 ```
 sudo apt update
@@ -40,7 +44,6 @@ If you are going to use cron you have to make sure that cron server is running b
 ```
 sudo systemctl status cron.service
 ```
-
 
 ## Step by Step Instructions Without cron
 
@@ -65,7 +68,24 @@ make
 So you can run your code with those default values but make sure that you have **~/workspace** directory or you will get an **error!**.
 
 ## Step by Step Instructions using cron
-If you willing to use cron this section is for you
 
-## Preparation
-First you have to run 
+
+### Add the script in the crontab
+First open crontab file
+```
+crontab -e
+```
+And add this line on it and save.
+```
+*/1 * * * * /bin/sh (backup-cron.sh --> location)
+```
+
+This line will backup your work every 1 minute.
+
+to change the time this website will help you **[Crontab guru]([https://](https://crontab.guru/))**
+
+### Example
+We want to backup every 3rd Friday of the month at 12:31AM the line will looks like this
+```
+31 0 ? * FRI#3 /bin/sh (backup-cron.sh --> location)
+```

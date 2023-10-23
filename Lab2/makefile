@@ -9,15 +9,10 @@ backup_dir ?= $(BACKUP)
 interval_secs ?= $(SECS)
 max_backups ?= $(MAX)
 
-all: backup
 .PHONY: backup
 
 backup: $(backup_dir) backupd.sh
 	./backupd.sh $(source_dir) $(backup_dir) $(interval_secs) $(max_backups)
-
-# BOUNS
-cron: $(backup_dir) backup-cron.sh
-	./backup-cron.sh $(source_dir) $(backup_dir) $(max_backups)
 
 # Create the backup directory if not existed
 $(backup_dir):
