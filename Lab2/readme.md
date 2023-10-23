@@ -34,7 +34,7 @@ make -version
 ```
 ![make version output](make_version_out.png)
 
-Install make by typing.
+Install **make** by typing.
 ```
 sudo apt install make
 ```
@@ -58,7 +58,7 @@ make SOURCE=? BACKUP=? SECS=? MAX=?
 
 **SECS:** backup every how much time in sec **(Default: 1min)**.
 
-**MAX:** max number of backups before delete.oldest backups **(Default: 10)**.
+**MAX:** max number of backups before delete oldest backup **(Default: 10)**.
 
 This is how to run with default arguments
 ```
@@ -77,15 +77,15 @@ crontab -e
 ```
 And add this line on it and save.
 ```
-*/1 * * * * /bin/sh (backup-cron.sh --> location)
+*/1 * * * * /bin/sh (backup-cron.sh --> location) source_dir backup_dir max_backup
 ```
 
-This line will backup your work every 1 minute.
+This line will backup your **source_dir** every **1 minute** to **backup_dir** and remove oldest backup after **max_backup**.
 
 to change the time this website will help you **[Crontab guru]([https://](https://crontab.guru/))**
 
 ### Example
 We want to backup every 3rd Friday of the month at 12:31AM the line will looks like this
 ```
-31 0 ? * FRI#3 /bin/sh (backup-cron.sh --> location)
+31 0 ? * FRI#3 /bin/sh (backup-cron.sh --> location) source_dir backup_dir max_backup
 ```
