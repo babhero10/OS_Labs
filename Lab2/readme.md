@@ -1,5 +1,5 @@
 # Backup Script
-**Backup Script** is a **shell script**  that constantly backup your work directory every sometime to another directory that the user choose.
+**Backup Script** is a **shell script**  that constantly backup your work directory every sometime to another directory that the user choose and if you don't change any thing with your working direcotry the backup cycle will be skipped.
 
 ## Folder hieratically 
 There is **3 main files**
