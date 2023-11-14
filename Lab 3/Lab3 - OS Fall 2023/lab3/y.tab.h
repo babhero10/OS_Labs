@@ -59,7 +59,8 @@ extern int yydebug;
     OUT_ERR_APPEND = 265,
     OUT_ERR_REDIRECT = 266,
     BACKGROUND = 267,
-    WILDCARD = 268
+    WILDCARD = 268,
+    EXIT = 269
   };
 #endif
 /* Tokens.  */
@@ -74,6 +75,7 @@ extern int yydebug;
 #define OUT_ERR_REDIRECT 266
 #define BACKGROUND 267
 #define WILDCARD 268
+#define EXIT 269
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -84,7 +86,7 @@ union YYSTYPE
 		char   *string_val;
 	
 
-#line 88 "y.tab.h"
+#line 90 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

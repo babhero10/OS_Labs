@@ -18,7 +18,7 @@
 %token	<string_val> WORD
 
 %token 	NOTOKEN PIPE OUT_APPEND OUT_REDIRECT IN_REDIRECT NEWLINE 
-%token 	OUT_ERR_APPEND OUT_ERR_REDIRECT BACKGROUND WILDCARD
+%token 	OUT_ERR_APPEND OUT_ERR_REDIRECT BACKGROUND WILDCARD EXIT
 
 %{
 extern "C" 
@@ -58,6 +58,9 @@ simple_command:
 		Command::_currentCommand.execute();
 	} | command_and_args iomodifier_opt background_task {
 		printf("   Yacc: Add sample command\n");
+	} | EXIT NEWLINE {
+		printf("\n\n\tGood Bye!!\n\n");
+		exit(0);
 	}
 	| error NEWLINE { yyerrok; }
 	| NEWLINE { yyerrok; }

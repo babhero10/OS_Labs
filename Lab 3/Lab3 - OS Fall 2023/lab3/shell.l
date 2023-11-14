@@ -46,7 +46,15 @@
 		return BACKGROUND;
 	}
 
+"*" | "?" { yylval.string_val = strdup(yytext); return WILDCARD; }
+
+"exit" {
+    return EXIT;
+}
+
 [^ \t\n><|&]+|"\""[^\"]*"\"" {
+
+	// Remove double quotes
     if (yytext[0] == '\"') {
         yylval.string_val = strdup(yytext + 1);
         yylval.string_val[strlen(yylval.string_val) - 1] = '\0';
@@ -56,8 +64,6 @@
     return WORD;
 }
 
-"*"    { yylval.string_val = strdup(yytext); return WILDCARD; }
-"?"    { yylval.string_val = strdup(yytext); return WILDCARD; }
 
 .	{
 		/* Invalid Syntax */

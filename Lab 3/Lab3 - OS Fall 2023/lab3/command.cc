@@ -17,11 +17,10 @@
 #include <string.h>
 #include <signal.h>
 #include <fcntl.h>
-#include <glob.h> // Include the glob header
+#include <glob.h>
 
 #include "command.h"
 
-const pid_t mainProgram = getpid();
 FILE *log_file;
 
 SimpleCommand::SimpleCommand()
@@ -190,33 +189,25 @@ char Command::special_command(char *command_name, char **args)
 		
 		return 1;
 	}
-	else if (strcmp(command_name, "exit") == 0)
-	{
-		kill(mainProgram, SIGINT);
-		return 1;
-	}
 	
 	return 0;
 }
 
-void expandWildcards(char ***args, int *numArgs) {
+void expandWildcards(char **args, int numArgs) {
     glob_t globResult;
     int flags = GLOB_NOCHECK | GLOB_TILDE;
 
-    for (int i = 0; i < *numArgs; i++) {
-        if (strstr((*args)[i], "*") != NULL || strstr((*args)[i], "?") != NULL) {
-            // If wildcard characters are present, perform expansion
-            if (glob((*args)[i], flags, NULL, &globResult) == 0) {
-                // Replace wildcard argument with expanded file names
-                free((*args)[i]);
-                (*args)[i] = strdup(globResult.gl_pathv[0]);
+    for (int i = 0; i < numArgs; i++) {
+        if (strstr((args)[i], "*") != NULL || strstr((args)[i], "?") != NULL) {
+            
+            if (glob((args)[i], flags, NULL, &globResult) == 0) {
+                free((args)[i]);
+                (args)[i] = strdup(globResult.gl_pathv[0]);
                 
-                // Add the rest of the expanded arguments
                 for (size_t j = 1; j < globResult.gl_pathc; j++) {
                 	Command::_currentSimpleCommand->insertArgument(strdup(globResult.gl_pathv[j]));
                 }
 
-                // Cleanup glob results
                 globfree(&globResult);
             }
         }
@@ -228,17 +219,24 @@ void Command::execute_helper()
     int defaultIn = dup(0);
     int defaultOut = dup(1);
     int defaultErr = dup(2);
-
     int fdpipe[2];
 	
 	int prevRead = dup(defaultIn);
 	int nextWrite;
+	int fderr = dup(defaultErr);
 
 	char *command_name;
     char **command_args;
-	pid_t child_pid;
+
     for (int current_command_index = 0; current_command_index < _currentCommand._numberOfSimpleCommands; current_command_index++)
     {
+
+		command_name = _currentCommand._simpleCommands[current_command_index]->_arguments[0];
+        command_args = _currentCommand._simpleCommands[current_command_index]->_arguments;
+
+		if (special_command(command_name, command_args) == 1) {
+			continue;
+		}
 
 		if (pipe(fdpipe) == -1)
 		{
@@ -273,19 +271,29 @@ void Command::execute_helper()
 					return;
 				}
 			}
+
+			if (_currentCommand._errFile)
+			{
+				fderr = create_file(_currentCommand._errFile, _currentCommand._append);
+				if (fderr == -1)
+				{
+					fprintf(stderr, "myshell: create errFile\n");
+					return;
+				}
+			}
 		}
 
         dup2(prevRead, 0);
         dup2(nextWrite, 1);
-        dup2(defaultErr, 2);
+        dup2(fderr, 2);
 
         close(prevRead);
         close(nextWrite);
+		close(fderr);
 
-        command_name = _currentCommand._simpleCommands[current_command_index]->_arguments[0];
+        expandWildcards(command_args, _currentCommand._simpleCommands[current_command_index]->_numberOfArguments);
+
         command_args = _currentCommand._simpleCommands[current_command_index]->_arguments;
-
-        expandWildcards(&command_args, &_currentCommand._simpleCommands[current_command_index]->_numberOfArguments);
 
         int pid = fork();
         if (pid == -1)
@@ -296,16 +304,12 @@ void Command::execute_helper()
 
         if (pid == 0)
 		{
-			child_pid = getpid();
-
-			if (!special_command(command_name, command_args))
-			{
-				execvp(command_name, command_args);
-				fprintf(stderr, "myshell: exec %s\n", command_name);
-				return;
-			}
+			// kill(getpid(), SIGINT);
+			execvp(command_name, command_args);
+			fprintf(stderr, "myshell: exec %s\n", command_name);
+			return;
         }
-		
+
         if (!_currentCommand._background)
         {
             waitpid(pid, 0, 0);
@@ -321,6 +325,9 @@ void Command::execute_helper()
 
 	close(fdpipe[0]);
 	close(fdpipe[1]);
+	close(prevRead);
+	close(nextWrite);
+	close(fderr);
     close(defaultIn);
     close(defaultOut);
     close(defaultErr);
@@ -373,21 +380,22 @@ SimpleCommand * Command::_currentSimpleCommand;
 int yyparse(void);
 
 void sigintHandler(int signum) {
-	if (mainProgram == getpid())
-	{
+	// if (childProgram == getpid())
+	// {
+	// 	for (int i = 0; i < Command::_currentSimpleCommand->_numberOfArguments ; i++)
+	// 	{
+	// 		fprintf(log_file, "%s ", Command::_currentSimpleCommand->_arguments[i]);
+	// 	}
+
+	// 	fputc('\n', log_file);
+	// }
+	// else
+	// {
 		printf("\n\n\tGood Bye!!\n\n");
 		fclose(log_file);
 		exit(0);
-	}
+	// }
 	
-	for (int i = 0; i < Command::_currentSimpleCommand->_numberOfArguments ; i++)
-	{
-		fprintf(log_file, "%s ", Command::_currentSimpleCommand->_arguments[i]);
-	}
-
-	fputc('\n', log_file);
-
-	exit(0);
 }
 
 int 
