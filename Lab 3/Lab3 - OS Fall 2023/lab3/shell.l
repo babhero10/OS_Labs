@@ -34,6 +34,14 @@
 		return OUT_APPEND;
 	}
 
+"&>" {	
+		return ERR_REDIRECT;
+	}
+
+"&>>" {	
+		return ERR_APPEND;
+	}
+
 "<" {	
 		return IN_REDIRECT;
 	}
@@ -46,7 +54,10 @@
 		return BACKGROUND;
 	}
 
-"*" | "?" { yylval.string_val = strdup(yytext); return WILDCARD; }
+"*"|"?" {
+	yylval.string_val = strdup(yytext);
+	return WILDCARD;
+}
 
 "exit" {
     return EXIT;
@@ -63,7 +74,6 @@
     }
     return WORD;
 }
-
 
 .	{
 		/* Invalid Syntax */

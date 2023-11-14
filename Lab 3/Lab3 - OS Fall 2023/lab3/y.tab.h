@@ -50,31 +50,31 @@ extern int yydebug;
   enum yytokentype
   {
     WORD = 258,
-    NOTOKEN = 259,
-    PIPE = 260,
-    OUT_APPEND = 261,
-    OUT_REDIRECT = 262,
-    IN_REDIRECT = 263,
-    NEWLINE = 264,
-    OUT_ERR_APPEND = 265,
-    OUT_ERR_REDIRECT = 266,
-    BACKGROUND = 267,
-    WILDCARD = 268,
+    WILDCARD = 259,
+    NOTOKEN = 260,
+    PIPE = 261,
+    OUT_APPEND = 262,
+    OUT_REDIRECT = 263,
+    IN_REDIRECT = 264,
+    NEWLINE = 265,
+    ERR_APPEND = 266,
+    ERR_REDIRECT = 267,
+    BACKGROUND = 268,
     EXIT = 269
   };
 #endif
 /* Tokens.  */
 #define WORD 258
-#define NOTOKEN 259
-#define PIPE 260
-#define OUT_APPEND 261
-#define OUT_REDIRECT 262
-#define IN_REDIRECT 263
-#define NEWLINE 264
-#define OUT_ERR_APPEND 265
-#define OUT_ERR_REDIRECT 266
-#define BACKGROUND 267
-#define WILDCARD 268
+#define WILDCARD 259
+#define NOTOKEN 260
+#define PIPE 261
+#define OUT_APPEND 262
+#define OUT_REDIRECT 263
+#define IN_REDIRECT 264
+#define NEWLINE 265
+#define ERR_APPEND 266
+#define ERR_REDIRECT 267
+#define BACKGROUND 268
 #define EXIT 269
 
 /* Value type.  */

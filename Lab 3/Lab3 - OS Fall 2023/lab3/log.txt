@@ -1,0 +1,7 @@
+echo 
+ls 
+ls 
+echo 
+ls -l 
+wc -l 
+wc -l 

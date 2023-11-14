@@ -18,10 +18,9 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <glob.h>
+#include <ctime>
 
 #include "command.h"
-
-FILE *log_file;
 
 SimpleCommand::SimpleCommand()
 {
@@ -186,32 +185,30 @@ char Command::special_command(char *command_name, char **args)
 			perror("myshell: exec chdir");
 			return 2;
 		}
-		
+
+		kill(getpid(), SIGCHLD);
 		return 1;
 	}
 	
 	return 0;
 }
 
-void expandWildcards(char **args, int numArgs) {
-    glob_t globResult;
-    int flags = GLOB_NOCHECK | GLOB_TILDE;
+void handleSIGCHLD(int sig_num)
+{
+	FILE *log_file = fopen("log.txt", "a");
 
-    for (int i = 0; i < numArgs; i++) {
-        if (strstr((args)[i], "*") != NULL || strstr((args)[i], "?") != NULL) {
-            
-            if (glob((args)[i], flags, NULL, &globResult) == 0) {
-                free((args)[i]);
-                (args)[i] = strdup(globResult.gl_pathv[0]);
-                
-                for (size_t j = 1; j < globResult.gl_pathc; j++) {
-                	Command::_currentSimpleCommand->insertArgument(strdup(globResult.gl_pathv[j]));
-                }
-
-                globfree(&globResult);
-            }
-        }
+    if (log_file == NULL) {
+        perror("myshell: open log");
+        return;
     }
+
+	for (int i = 0; i < Command::_currentSimpleCommand->_numberOfArguments ; i++)
+	{	
+		fprintf(log_file, "%s ", Command::_currentSimpleCommand->_arguments[i]);
+	}
+
+	fputc('\n', log_file);
+	fclose(log_file);
 }
 
 void Command::execute_helper()
@@ -291,8 +288,6 @@ void Command::execute_helper()
         close(nextWrite);
 		close(fderr);
 
-        expandWildcards(command_args, _currentCommand._simpleCommands[current_command_index]->_numberOfArguments);
-
         command_args = _currentCommand._simpleCommands[current_command_index]->_arguments;
 
         int pid = fork();
@@ -309,14 +304,18 @@ void Command::execute_helper()
 			fprintf(stderr, "myshell: exec %s\n", command_name);
 			return;
         }
+		else
+		{
+			signal(SIGCHLD, handleSIGCHLD);
+			if (!_currentCommand._background)
+			{
+				waitpid(pid, 0, 0);
+			}
 
-        if (!_currentCommand._background)
-        {
-            waitpid(pid, 0, 0);
-        }
+			prevRead = dup(fdpipe[0]);
+			close(fdpipe[0]);
+		}
 
-		prevRead = dup(fdpipe[0]);
-		close(fdpipe[0]);
     }
 
     dup2(defaultIn, 0);
@@ -380,34 +379,13 @@ SimpleCommand * Command::_currentSimpleCommand;
 int yyparse(void);
 
 void sigintHandler(int signum) {
-	// if (childProgram == getpid())
-	// {
-	// 	for (int i = 0; i < Command::_currentSimpleCommand->_numberOfArguments ; i++)
-	// 	{
-	// 		fprintf(log_file, "%s ", Command::_currentSimpleCommand->_arguments[i]);
-	// 	}
-
-	// 	fputc('\n', log_file);
-	// }
-	// else
-	// {
-		printf("\n\n\tGood Bye!!\n\n");
-		fclose(log_file);
-		exit(0);
-	// }
-	
+	printf("\n\n\tGood Bye!!\n\n");
+	exit(0);	
 }
 
 int 
 main()
 {
-	log_file = fopen("log.txt", "w");
-	
-    if (log_file == NULL) {
-        perror("myshell: open log");
-        return 1;
-    }
-
 	if (signal(SIGINT, sigintHandler) == SIG_ERR) {
 		fprintf(stderr, "myshell: Failed to set signal handler for SIGINT\n");
 		return 1;

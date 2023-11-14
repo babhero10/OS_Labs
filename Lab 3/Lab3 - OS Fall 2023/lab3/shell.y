@@ -16,9 +16,10 @@
 	}
 
 %token	<string_val> WORD
+%token	<string_val> WILDCARD
 
 %token 	NOTOKEN PIPE OUT_APPEND OUT_REDIRECT IN_REDIRECT NEWLINE 
-%token 	OUT_ERR_APPEND OUT_ERR_REDIRECT BACKGROUND WILDCARD EXIT
+%token 	ERR_APPEND ERR_REDIRECT BACKGROUND EXIT
 
 %{
 extern "C" 
@@ -30,6 +31,8 @@ extern "C"
 #define yylex yylex
 #include <stdio.h>
 #include "command.h"
+#include <glob.h>
+#include <string.h>
 %}
 
 %{
@@ -79,12 +82,25 @@ arg_list:
 	;
 
 argument:
-	WORD {
-            printf("   Yacc: insert argument \"%s\"\n", $1);
-             
-	        Command::_currentSimpleCommand->insertArgument( $1 );
-	}
-	;
+    WILDCARD {
+        printf("   Yacc: insert wildcard argument \"%s\"\n", $1);
+		glob_t globResult;
+		int flags = GLOB_NOCHECK | GLOB_TILDE;
+		if (glob($1, flags, NULL, &globResult) == 0) {
+			
+			for (size_t j = 1; j < globResult.gl_pathc; j++) {
+				Command::_currentSimpleCommand->insertArgument(strdup(globResult.gl_pathv[j]));
+			}
+
+			globfree(&globResult);
+		}
+
+    } | WORD {
+        printf("   Yacc: insert argument \"%s\"\n", $1);
+        Command::_currentSimpleCommand->insertArgument($1);
+    }
+    ;
+
 
 command_word:
 	WORD {
@@ -113,12 +129,12 @@ iomodifier_opt:
         Command::_currentCommand._outFile = $3;
         Command::_currentCommand._append = 1;
     }
-    | iomodifier_opt OUT_ERR_REDIRECT WORD {
+    | iomodifier_opt ERR_REDIRECT WORD {
         printf("   Yacc: write output and error \"%s\"\n", $3);
         Command::_currentCommand._outFile = $3;
         Command::_currentCommand._errFile = $3;
     }
-    | iomodifier_opt OUT_ERR_APPEND WORD {
+    | iomodifier_opt ERR_APPEND WORD {
         printf("   Yacc: append output and error \"%s\"\n", $3);
         Command::_currentCommand._outFile = $3;
         Command::_currentCommand._errFile = $3;
