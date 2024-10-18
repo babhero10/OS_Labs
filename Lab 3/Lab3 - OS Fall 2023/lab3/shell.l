@@ -54,14 +54,9 @@
 		return BACKGROUND;
 	}
 
-"*"|"?" {
-	yylval.string_val = strdup(yytext);
-	return WILDCARD;
-}
-
 "exit" {
-    return EXIT;
-}
+		return EXIT;
+	}
 
 [^ \t\n><|&]+|"\""[^\"]*"\"" {
 

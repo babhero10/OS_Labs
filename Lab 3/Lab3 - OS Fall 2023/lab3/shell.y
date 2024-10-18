@@ -36,7 +36,7 @@ extern "C"
 %}
 
 %{
-extern int yylineno; /* Initialize yylineno to 1 */
+	extern int yylineno; /* Initialize yylineno to 1 */
 %}
 
 %%
@@ -84,6 +84,7 @@ arg_list:
 argument:
     WILDCARD {
         printf("   Yacc: insert wildcard argument \"%s\"\n", $1);
+
 		glob_t globResult;
 		int flags = GLOB_NOCHECK | GLOB_TILDE;
 		if (glob($1, flags, NULL, &globResult) == 0) {
@@ -131,12 +132,10 @@ iomodifier_opt:
     }
     | iomodifier_opt ERR_REDIRECT WORD {
         printf("   Yacc: write output and error \"%s\"\n", $3);
-        Command::_currentCommand._outFile = $3;
         Command::_currentCommand._errFile = $3;
     }
     | iomodifier_opt ERR_APPEND WORD {
         printf("   Yacc: append output and error \"%s\"\n", $3);
-        Command::_currentCommand._outFile = $3;
         Command::_currentCommand._errFile = $3;
     }
     | iomodifier_opt IN_REDIRECT WORD {

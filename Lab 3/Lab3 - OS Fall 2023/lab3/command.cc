@@ -164,6 +164,30 @@ int create_file(char *file_name, char mode)
 	return file;
 }
 
+void expandWildcards(char **args, int numArgs) {
+    glob_t globResult;
+    int flags = GLOB_NOCHECK | GLOB_TILDE;
+
+    for (int i = 0; i < numArgs; i++) {
+        if (strstr((args)[i], "*") != NULL || strstr((args)[i], "?") != NULL) {
+            if (glob((args)[i], flags, NULL, &globResult) == 0) {
+                free((args)[i]);
+                (args)[i] = strdup(globResult.gl_pathv[0]);
+                
+                for (size_t j = 1; j < globResult.gl_pathc; j++) {
+                	Command::_currentSimpleCommand->insertArgument(strdup(globResult.gl_pathv[j]));
+                }
+
+                globfree(&globResult);
+            }
+			else
+			{
+				perror("myshell: glob error");
+			}
+        }
+    }
+}
+
 char Command::special_command(char *command_name, char **args)
 {  
 
@@ -186,7 +210,6 @@ char Command::special_command(char *command_name, char **args)
 			return 2;
 		}
 
-		kill(getpid(), SIGCHLD);
 		return 1;
 	}
 	
@@ -195,19 +218,25 @@ char Command::special_command(char *command_name, char **args)
 
 void handleSIGCHLD(int sig_num)
 {
-	FILE *log_file = fopen("log.txt", "a");
+	FILE *log_file = fopen("childLog.log", "a");
 
     if (log_file == NULL) {
         perror("myshell: open log");
         return;
     }
 
-	for (int i = 0; i < Command::_currentSimpleCommand->_numberOfArguments ; i++)
-	{	
-		fprintf(log_file, "%s ", Command::_currentSimpleCommand->_arguments[i]);
-	}
+	time_t currentTime;
+    time(&currentTime);
 
-	fputc('\n', log_file);
+    struct tm *timeInfo;
+    timeInfo = localtime(&currentTime);
+
+    char formattedTime[20]; 
+    strftime(formattedTime, sizeof(formattedTime), "%Y:%m:%d %H:%M:%S", timeInfo);
+	fprintf(log_file, "%s\n", formattedTime);
+	fprintf(log_file, "Child: Terminated");
+
+	fputs("\n------------\n", log_file);
 	fclose(log_file);
 }
 
@@ -238,7 +267,7 @@ void Command::execute_helper()
 		if (pipe(fdpipe) == -1)
 		{
 			perror("myshell: pipe");
-			return;
+			break;
 		}
 
 		if (current_command_index >= _currentCommand._numberOfSimpleCommands - 1) {
@@ -255,7 +284,7 @@ void Command::execute_helper()
 				if (prevRead == -1)
 				{
 					fprintf(stderr, "myshell: create inFile\n");
-					return;
+					break;
 				}
 			}
 
@@ -265,7 +294,7 @@ void Command::execute_helper()
 				if (nextWrite == -1)
 				{
 					fprintf(stderr, "myshell: create outFile\n");
-					return;
+					break;
 				}
 			}
 
@@ -275,7 +304,7 @@ void Command::execute_helper()
 				if (fderr == -1)
 				{
 					fprintf(stderr, "myshell: create errFile\n");
-					return;
+					break;
 				}
 			}
 		}
@@ -288,21 +317,21 @@ void Command::execute_helper()
         close(nextWrite);
 		close(fderr);
 
+		expandWildcards(command_args, _currentCommand._simpleCommands[current_command_index]->_numberOfArguments);
         command_args = _currentCommand._simpleCommands[current_command_index]->_arguments;
 
         int pid = fork();
         if (pid == -1)
         {
             fprintf(stderr, "myshell: fork %s\n", command_name);
-            return;
+            break;
         }
 
         if (pid == 0)
 		{
-			// kill(getpid(), SIGINT);
 			execvp(command_name, command_args);
 			fprintf(stderr, "myshell: exec %s\n", command_name);
-			return;
+			exit(0);
         }
 		else
 		{
@@ -324,8 +353,6 @@ void Command::execute_helper()
 
 	close(fdpipe[0]);
 	close(fdpipe[1]);
-	close(prevRead);
-	close(nextWrite);
 	close(fderr);
     close(defaultIn);
     close(defaultOut);
@@ -369,7 +396,7 @@ void
 Command::prompt()
 {
 	Command::_currentCommand.update_path();
-	printf("myshell:~%s$ ", _path);
+	printf("\033[1;32mmyshell\033[0m:\033[1;34m~%s\033[0m$ ", _path);
 	fflush(stdout);
 }
 
